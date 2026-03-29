@@ -1,0 +1,46 @@
+{
+  "manifest_version": "0.3",
+  "name": "agentpowers",
+  "version": "1.0.0",
+  "display_name": "AgentPowers",
+  "description": "Search, purchase, and install AI skills from the AgentPowers marketplace. Browse categories, check security scores, manage your account, and install skills for any MCP-compatible platform — all from Claude.",
+  "author": {
+    "name": "AgentPowers",
+    "url": "https://agentpowers.ai"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"]
+    }
+  },
+  "icon": "icon.png",
+  "tools": [
+    { "name": "search_marketplace", "description": "Search AgentPowers marketplace skills and agents" },
+    { "name": "get_skill_details", "description": "Get detailed metadata for a skill or agent" },
+    { "name": "login_account", "description": "Log in to your AgentPowers account" },
+    { "name": "logout_account", "description": "Log out from your AgentPowers account" },
+    { "name": "whoami_account", "description": "Show current account identity" },
+    { "name": "get_account_profile", "description": "Fetch authenticated account profile" },
+    { "name": "list_purchases", "description": "List your purchases, licenses, and install commands" },
+    { "name": "start_checkout", "description": "Create checkout session for a paid skill" },
+    { "name": "check_purchase_status", "description": "Check purchase status and optionally wait for completion" },
+    { "name": "confirm_purchase_session", "description": "Confirm purchase by Stripe session ID" },
+    { "name": "download_purchased_skill", "description": "Get download URL for a purchased skill" },
+    { "name": "install_skill", "description": "Install a skill with full automation" },
+    { "name": "install_purchased_skill", "description": "Install a previously purchased skill" },
+    { "name": "check_installed", "description": "List installed skills across platforms" },
+    { "name": "uninstall_skill", "description": "Uninstall a skill from your system" },
+    { "name": "check_for_updates", "description": "Check installed skills for newer versions" },
+    { "name": "search_skills", "description": "Search skills (alias for search_marketplace)" },
+    { "name": "get_categories", "description": "List marketplace categories and counts" },
+    { "name": "get_seller_profile", "description": "Get seller public profile and published skills" },
+    { "name": "get_skill_reviews", "description": "Get reviews for a skill" },
+    { "name": "get_security_results", "description": "Get security scan results for a skill" },
+    { "name": "get_marketplace_snapshot", "description": "Get API and account health snapshot" },
+    { "name": "get_platforms", "description": "List all supported AI platforms" },
+    { "name": "get_openapi_summary", "description": "Summarize the AgentPowers OpenAPI spec" }
+  ]
+}
