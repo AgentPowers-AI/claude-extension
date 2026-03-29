@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light.svg">
-    <img alt="AgentPowers" src="./assets/logo-light.svg" width="360">
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-darkmode.svg">
+    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-lightmode.svg">
+    <img alt="AgentPowers" src="./assets/logo-lightmode.svg" width="420">
   </picture>
 </p>
 
