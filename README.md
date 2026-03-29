@@ -1,6 +1,19 @@
-# AgentPowers - Claude Desktop Extension
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light.svg">
+    <img alt="AgentPowers" src="./assets/logo-light.svg" width="360">
+  </picture>
+</p>
 
-The official AgentPowers marketplace extension for Claude Desktop. Search, purchase, and install AI skills directly from your Claude conversations.
+<h1 align="center">Claude Desktop Extension</h1>
+
+<p align="center">
+  The official AgentPowers marketplace extension for Claude Desktop.<br>
+  Search, purchase, and install AI skills directly from your conversations.
+</p>
+
+---
 
 ## What it does
 
@@ -14,15 +27,16 @@ AgentPowers brings the full marketplace experience into Claude Desktop. You can:
 
 ## Installation
 
-1. Download or build the `.mcpb` bundle for this extension.
-2. Drag the `.mcpb` file into Claude Desktop, or place it in your Claude Desktop extensions directory.
-3. Restart Claude Desktop. The AgentPowers tools will appear in your tool list.
+1. Download `claude-extension.mcpb` from the [latest release](https://github.com/AgentPowers-AI/claude-extension/releases)
+2. Drag it into Claude Desktop, or double-click the file
+3. Click Install — done!
+
+No terminal, no config files, no Node.js install needed.
 
 ### Prerequisites
 
-- **Claude Desktop** with extension support
+- **Claude Desktop** with extension support (macOS or Windows)
 - **AgentPowers CLI** (`pip install agentpowers`) for install/login operations
-- **Node.js** 18+ (bundled with Claude Desktop)
 
 ## Available Tools
 
@@ -85,9 +99,9 @@ AgentPowers brings the full marketplace experience into Claude Desktop. You can:
 
 The extension also exposes MCP resources that Claude can read proactively:
 
-- `agentpowers://marketplace/snapshot` -- Live API health, skill count, and account status
-- `agentpowers://account/purchases` -- Your current purchase list (requires auth)
-- `agentpowers://docs/openapi-summary` -- Summary of the AgentPowers OpenAPI spec
+- `agentpowers://marketplace/snapshot` — Live API health, skill count, and account status
+- `agentpowers://account/purchases` — Your current purchase list (requires auth)
+- `agentpowers://docs/openapi-summary` — Summary of the AgentPowers OpenAPI spec
 
 ## Privacy & Security
 
@@ -104,15 +118,15 @@ The extension respects these environment variables:
 |----------|---------|-------------|
 | `AGENTPOWERS_API_BASE` | `https://api.agentpowers.ai/v1` | API base URL |
 | `AGENTPOWERS_SITE_ORIGIN` | `https://agentpowers.ai` | Website origin |
-| `AGENTPOWERS_API_TOKEN` | -- | Override auth token (skips auth.json) |
-| `AGENTPOWERS_DEFAULT_TOOL` | `codex` | Default install target platform |
+| `AGENTPOWERS_API_TOKEN` | — | Override auth token (skips auth.json) |
+| `AGENTPOWERS_DEFAULT_TOOL` | `claude-code` | Default install target platform |
 
 ## Support
 
-- **Website:** https://agentpowers.ai
-- **Documentation:** https://docs.agentpowers.ai
+- **Website:** [agentpowers.ai](https://agentpowers.ai/claude-extension)
+- **Documentation:** [docs.agentpowers.ai](https://docs.agentpowers.ai)
 - **Email:** support@agentpowers.ai
-- **GitHub:** https://github.com/AgentPowers-AI
+- **GitHub:** [github.com/AgentPowers-AI](https://github.com/AgentPowers-AI)
 
 ## License
 

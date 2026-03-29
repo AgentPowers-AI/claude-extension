@@ -239,7 +239,7 @@ function normalizeToolKey(value) {
   return raw.replace(/[_.\s]+/g, "-");
 }
 
-function resolveTargetTool(value, defaultTool = "codex", allowAll = false) {
+function resolveTargetTool(value, defaultTool = "claude-code", allowAll = false) {
   const fallback = allowAll ? "all" : defaultTool;
   const normalized = normalizeToolKey(value || fallback);
   if (allowAll && normalized === "all") return "all";
@@ -1529,7 +1529,7 @@ async function installViaMirrorFallback(
     30_000,
     toNumber(options.timeout_ms, 300_000),
   );
-  const bridgeTool = "codex";
+  const bridgeTool = "claude-code";
 
   const beforeEntries = getToolInstallEntries(bridgeTool, slug);
   const bridgeArgs = ["install", slug, "--for", bridgeTool];
@@ -1617,8 +1617,8 @@ function buildInstallCommand(skillSlug, licenseCode, options = {}) {
     options.target_tool ||
       options.for_tool ||
       process.env.AGENTPOWERS_DEFAULT_TOOL ||
-      "codex",
-    "codex",
+      "claude-code",
+    "claude-code",
     false,
   );
   const source = String(options.source || "").trim();
@@ -1639,8 +1639,8 @@ async function runInstallWithLicense(slug, licenseCode, options = {}) {
     options.target_tool ||
       options.for_tool ||
       process.env.AGENTPOWERS_DEFAULT_TOOL ||
-      "codex",
-    "codex",
+      "claude-code",
+    "claude-code",
     false,
   );
   const source = String(options.source || "").trim();
@@ -1980,8 +1980,8 @@ async function uninstallSkill(args = {}) {
     return { isError: true, ...mkContent("Missing required argument: slug") };
 
   const targetTool = resolveTargetTool(
-    args.target_tool || args.for_tool || "codex",
-    "codex",
+    args.target_tool || args.for_tool || "claude-code",
+    "claude-code",
     true,
   );
   const removed = [];
@@ -2584,7 +2584,7 @@ const PROMPT_DEFS = [
       {
         name: "tool",
         required: false,
-        description: "Target tool, default codex.",
+        description: "Target tool, default claude-code.",
       },
     ],
   },
@@ -2593,7 +2593,7 @@ const PROMPT_DEFS = [
 function makePromptMessages(name, args = {}) {
   if (name === "buy_and_install_skill") {
     const slug = args.slug || "<skill-slug>";
-    const tool = args.tool || "codex";
+    const tool = args.tool || "claude-code";
     return [
       {
         role: "user",
