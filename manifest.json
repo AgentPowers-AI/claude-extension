@@ -41,6 +41,7 @@
     { "name": "get_security_results", "description": "Get security scan results for a skill" },
     { "name": "get_marketplace_snapshot", "description": "Get API and account health snapshot" },
     { "name": "get_platforms", "description": "List all supported AI platforms" },
-    { "name": "get_openapi_summary", "description": "Summarize the AgentPowers OpenAPI spec" }
+    { "name": "get_openapi_summary", "description": "Summarize the AgentPowers OpenAPI spec" },
+    { "name": "check_extension_version", "description": "Check if a newer version of the AgentPowers extension is available" }
   ]
 }

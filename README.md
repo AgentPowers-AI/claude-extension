@@ -83,6 +83,7 @@ No terminal, no config files, no Node.js install needed.
 | `check_installed` | List all installed skills with version/edit status |
 | `uninstall_skill` | Remove a skill from one or all platforms |
 | `check_for_updates` | Compare installed versions against marketplace |
+| `check_extension_version` | Check if a newer version of this extension is available |
 
 ## Example Prompts
 
@@ -102,6 +103,7 @@ The extension also exposes MCP resources that Claude can read proactively:
 - `agentpowers://marketplace/snapshot` — Live API health, skill count, and account status
 - `agentpowers://account/purchases` — Your current purchase list (requires auth)
 - `agentpowers://docs/openapi-summary` — Summary of the AgentPowers OpenAPI spec
+- `agentpowers://extension/version` — Current extension version and update availability
 
 ## Privacy & Security
 

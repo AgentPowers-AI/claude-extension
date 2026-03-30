@@ -49,6 +49,9 @@ const PLUGIN_STATE_FILE = path.join(
   "plugin-state.json",
 );
 
+const NPM_PACKAGE_NAME = "agentpowers-claude-extension";
+const NPM_REGISTRY_URL = `https://registry.npmjs.org/${NPM_PACKAGE_NAME}`;
+
 const EXCLUDED_HASH_NAMES = new Set([".DS_Store", "Thumbs.db"]);
 
 const INSTALL_TARGETS = [
@@ -2159,6 +2162,71 @@ async function checkForUpdates(args = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// Extension self-update check
+// ---------------------------------------------------------------------------
+
+let _cachedExtensionVersionCheck = null;
+
+async function fetchLatestExtensionVersion() {
+  try {
+    const response = await fetch(NPM_REGISTRY_URL, {
+      headers: { Accept: "application/json", "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return (data["dist-tags"] && data["dist-tags"].latest) || null;
+  } catch {
+    return null;
+  }
+}
+
+async function checkExtensionVersion() {
+  const latest = await fetchLatestExtensionVersion();
+
+  if (!latest) {
+    const result = {
+      current_version: SERVER_VERSION,
+      latest_version: null,
+      update_available: false,
+      message: `AgentPowers extension v${SERVER_VERSION} — unable to check for updates (package not published or registry unreachable).`,
+    };
+    _cachedExtensionVersionCheck = result;
+    return mkContent(result.message);
+  }
+
+  const cmp = compareSemver(SERVER_VERSION, latest);
+  const updateAvailable = cmp !== null && cmp < 0;
+
+  const lines = [`AgentPowers Extension Version Check`, ""];
+  lines.push(`Installed: v${SERVER_VERSION}`);
+  lines.push(`Latest:    v${latest}`);
+  lines.push("");
+
+  if (updateAvailable) {
+    lines.push(`⚠ Update available! v${SERVER_VERSION} → v${latest}`);
+    lines.push("");
+    lines.push("To update:");
+    lines.push("  • Claude Desktop: download the latest .mcpb from GitHub releases");
+    lines.push(`  • Claude Code / Codex: npx ${NPM_PACKAGE_NAME}@latest`);
+    lines.push(`  • npm: npm install -g ${NPM_PACKAGE_NAME}@latest`);
+  } else if (cmp === 0) {
+    lines.push("✓ You are running the latest version.");
+  } else {
+    lines.push("✓ You are running a newer version than the published release.");
+  }
+
+  const result = {
+    current_version: SERVER_VERSION,
+    latest_version: latest,
+    update_available: updateAvailable,
+    message: lines.join("\n"),
+  };
+  _cachedExtensionVersionCheck = result;
+  return mkContent(result.message);
+}
+
+// ---------------------------------------------------------------------------
 // Tool definitions (for listing)
 // ---------------------------------------------------------------------------
 
@@ -2498,6 +2566,15 @@ const TOOL_DEFS = [
       properties: {},
     },
   },
+  {
+    name: "check_extension_version",
+    description:
+      "Check if a newer version of the AgentPowers extension is available on npm.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
 ];
 
 // Tool name -> handler mapping
@@ -2526,6 +2603,7 @@ const TOOL_HANDLERS = {
   get_marketplace_snapshot: getMarketplaceSnapshot,
   get_platforms: getPlatforms,
   get_openapi_summary: getOpenApiSummary,
+  check_extension_version: checkExtensionVersion,
 };
 
 // ---------------------------------------------------------------------------
@@ -2550,6 +2628,13 @@ const RESOURCE_DEFS = [
     uri: "agentpowers://docs/openapi-summary",
     name: "openapi_summary",
     description: "Summary of the AgentPowers OpenAPI schema.",
+    mimeType: "text/plain",
+  },
+  {
+    uri: "agentpowers://extension/version",
+    name: "extension_version",
+    description:
+      "Current extension version and whether an update is available.",
     mimeType: "text/plain",
   },
 ];
@@ -2706,6 +2791,8 @@ server.setRequestHandler(
       text = (await listPurchases({ limit: 100 })).content[0].text;
     } else if (uri === "agentpowers://docs/openapi-summary") {
       text = (await getOpenApiSummary()).content[0].text;
+    } else if (uri === "agentpowers://extension/version") {
+      text = (await checkExtensionVersion()).content[0].text;
     } else {
       throw new Error(`Unknown resource URI: ${uri}`);
     }
@@ -2752,6 +2839,24 @@ async function main() {
   process.stderr.write(
     `${SERVER_NAME} v${SERVER_VERSION} running on stdio\n`,
   );
+
+  // Background version check — non-blocking, never fails the server
+  fetchLatestExtensionVersion().then((latest) => {
+    if (!latest) return;
+    const cmp = compareSemver(SERVER_VERSION, latest);
+    if (cmp !== null && cmp < 0) {
+      process.stderr.write(
+        `[update] AgentPowers extension v${latest} is available (current: v${SERVER_VERSION}). ` +
+          `Download from GitHub releases or run: npx ${NPM_PACKAGE_NAME}@latest\n`,
+      );
+    }
+    _cachedExtensionVersionCheck = {
+      current_version: SERVER_VERSION,
+      latest_version: latest,
+      update_available: cmp !== null && cmp < 0,
+      message: "",
+    };
+  }).catch(() => {});
 }
 
 main().catch((error) => {
