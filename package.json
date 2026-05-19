@@ -1,9 +1,26 @@
 {
   "name": "agentpowers-claude-extension",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "AgentPowers marketplace integration for Claude Desktop",
-  "private": true,
+  "homepage": "https://github.com/AgentPowers-AI/claude-extension",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AgentPowers-AI/claude-extension.git"
+  },
+  "license": "MIT",
+  "author": "AgentPowers",
   "type": "module",
+  "main": "server/index.js",
+  "files": [
+    "server/",
+    "manifest.json",
+    "icon.png",
+    "assets/",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
   }
