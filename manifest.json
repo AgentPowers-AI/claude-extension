@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.3",
   "name": "agentpowers",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "display_name": "AgentPowers",
   "description": "Search, purchase, and install AI skills from the AgentPowers marketplace. Browse categories, check security scores, manage your account, and install skills for any MCP-compatible platform — all from Claude.",
   "author": {
