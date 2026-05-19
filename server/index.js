@@ -33,7 +33,7 @@ import { spawn } from "node:child_process";
 // ---------------------------------------------------------------------------
 
 const SERVER_NAME = "agentpowers-marketplace-mcp";
-const SERVER_VERSION = "1.1.0";
+const SERVER_VERSION = "1.1.1";
 
 const SITE_ORIGIN =
   process.env.AGENTPOWERS_SITE_ORIGIN || "https://agentpowers.ai";
