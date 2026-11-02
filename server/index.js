@@ -263,6 +263,50 @@ function toolConfigDirName(tool) {
   return `.${tool}`;
 }
 
+// Slugs become path segments under <tool root>/skills|agents/. Same charset as
+// agentpowers-core validateSlug: lowercase alphanumerics and hyphens, starting
+// with an alphanumeric. No dots, slashes, backslashes, "%", "~" or NUL, so
+// "../..", absolute paths and encoded separators can never form a path.
+const VALID_SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+const MAX_SLUG_LENGTH = 128;
+
+function isValidSlug(slug) {
+  return (
+    typeof slug === "string" &&
+    slug.length <= MAX_SLUG_LENGTH &&
+    VALID_SLUG_RE.test(slug)
+  );
+}
+
+function invalidSlugMessage(slug) {
+  const shown = JSON.stringify(String(slug).slice(0, 80));
+  return `Invalid slug ${shown}: use lowercase letters, digits and hyphens only (must start with a letter or digit).`;
+}
+
+function assertValidSlug(slug) {
+  if (!isValidSlug(slug)) throw new Error(invalidSlugMessage(slug));
+  return slug;
+}
+
+// Resolve <baseDir>/<slug> and prove it is a direct child of baseDir. Defense in
+// depth on top of the slug charset check: every recursive delete goes through it.
+function resolveInsideRoot(baseDir, slug) {
+  assertValidSlug(slug);
+  const base = path.resolve(baseDir);
+  const resolved = path.resolve(base, slug);
+  const rel = path.relative(base, resolved);
+  if (
+    !rel ||
+    rel !== slug ||
+    rel.startsWith("..") ||
+    path.isAbsolute(rel) ||
+    rel.includes(path.sep)
+  ) {
+    throw new Error(`Refusing path outside ${base}: ${resolved}`);
+  }
+  return resolved;
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -598,7 +642,7 @@ function getToolInstallEntries(tool, slug) {
   const entries = [];
 
   for (const kind of ["skills", "agents"]) {
-    const installPath = path.join(root, kind, slug);
+    const installPath = resolveInsideRoot(path.join(root, kind), slug);
     try {
       if (
         fs.existsSync(installPath) &&
@@ -1526,6 +1570,7 @@ async function installViaMirrorFallback(
   targetTool,
   options = {},
 ) {
+  assertValidSlug(slug);
   const source = String(options.source || "").trim();
   const globalInstall = toBool(options.global, false);
   const timeoutMs = Math.max(
@@ -1580,7 +1625,10 @@ async function installViaMirrorFallback(
   const targetRoot = getGlobalToolRoot(targetTool);
   const mirroredPaths = [];
   for (const entry of entriesToCopy) {
-    const targetPath = path.join(targetRoot, entry.kind, slug);
+    const targetPath = resolveInsideRoot(
+      path.join(targetRoot, entry.kind),
+      slug,
+    );
     if (fs.existsSync(targetPath))
       fs.rmSync(targetPath, { recursive: true, force: true });
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
@@ -1589,9 +1637,19 @@ async function installViaMirrorFallback(
   }
 
   const cleanupPaths = [];
+  const bridgeRoot = getGlobalToolRoot(bridgeTool);
   for (const entry of freshEntries) {
-    if (!fs.existsSync(entry.install_path)) continue;
-    fs.rmSync(entry.install_path, { recursive: true, force: true });
+    const bridgePath = resolveInsideRoot(
+      path.join(bridgeRoot, entry.kind),
+      slug,
+    );
+    if (bridgePath !== path.resolve(entry.install_path)) {
+      throw new Error(
+        `Refusing to remove unexpected bridge path: ${entry.install_path}`,
+      );
+    }
+    if (!fs.existsSync(bridgePath)) continue;
+    fs.rmSync(bridgePath, { recursive: true, force: true });
     cleanupPaths.push(entry.install_path);
   }
 
@@ -1636,6 +1694,7 @@ function buildInstallCommand(skillSlug, licenseCode, options = {}) {
 }
 
 async function runInstallWithLicense(slug, licenseCode, options = {}) {
+  assertValidSlug(slug);
   await ensureApAvailable();
 
   const targetTool = resolveTargetTool(
@@ -1692,6 +1751,8 @@ async function installSkill(args = {}) {
   const slug = String(args.slug || "").trim();
   if (!slug)
     return { isError: true, ...mkContent("Missing required argument: slug") };
+  if (!isValidSlug(slug))
+    return { isError: true, ...mkContent(invalidSlugMessage(slug)) };
 
   const source = String(args.source || "").trim();
   const explicitCode = String(args.license_code || args.code || "").trim();
@@ -1971,7 +2032,29 @@ async function checkInstalled(args = {}) {
   return mkContent(formatInstalledEntries(filtered));
 }
 
-function removeDirectoryIfExists(dirPath, removed) {
+// A project-scoped root (<cwd>/.claude) comes from whatever repository the
+// user opened, so it is untrusted: a cloned repo could ship .claude/skills as a
+// symlink to ~ and turn "uninstall <valid-slug>" into deleting ~/<slug>. Only
+// use it when neither .claude nor .claude/<kind> is a symlink and the real
+// path still sits under the real cwd. Global roots live in the user's own home
+// config and may legitimately be symlinked (dotfile managers).
+function isSafeProjectKindDir(projectRoot, kind) {
+  try {
+    const kindDir = path.join(projectRoot, kind);
+    if (fs.lstatSync(projectRoot).isSymbolicLink()) return false;
+    if (!fs.existsSync(kindDir)) return true;
+    if (fs.lstatSync(kindDir).isSymbolicLink()) return false;
+    const expected = path.join(fs.realpathSync(path.dirname(projectRoot)), path.basename(projectRoot), kind);
+    return fs.realpathSync(kindDir) === expected;
+  } catch {
+    return false;
+  }
+}
+
+// Removes <baseDir>/<slug> only; resolveInsideRoot throws on anything that is
+// not a direct child of baseDir.
+function removeSlugDirIfExists(baseDir, slug, removed) {
+  const dirPath = resolveInsideRoot(baseDir, slug);
   if (!fs.existsSync(dirPath)) return;
   fs.rmSync(dirPath, { recursive: true, force: true });
   removed.push(dirPath);
@@ -1981,6 +2064,8 @@ async function uninstallSkill(args = {}) {
   const slug = String(args.slug || "").trim();
   if (!slug)
     return { isError: true, ...mkContent("Missing required argument: slug") };
+  if (!isValidSlug(slug))
+    return { isError: true, ...mkContent(invalidSlugMessage(slug)) };
 
   const targetTool = resolveTargetTool(
     args.target_tool || args.for_tool || "claude-code",
@@ -1991,19 +2076,31 @@ async function uninstallSkill(args = {}) {
 
   const selectedTools =
     targetTool === "all" ? INSTALL_TARGETS : [targetTool];
-  const toolRoots = selectedTools.map((tool) =>
-    path.join(os.homedir(), toolConfigDirName(tool)),
-  );
+  const toolRoots = selectedTools.map((tool) => ({
+    root: path.join(os.homedir(), toolConfigDirName(tool)),
+    project: false,
+  }));
 
   if (selectedTools.includes("claude-code")) {
     const projectClaude = path.join(process.cwd(), ".claude");
-    if (fs.existsSync(projectClaude)) toolRoots.push(projectClaude);
+    if (fs.existsSync(projectClaude))
+      toolRoots.push({ root: projectClaude, project: true });
   }
 
-  for (const root of toolRoots) {
-    removeDirectoryIfExists(path.join(root, "skills", slug), removed);
-    removeDirectoryIfExists(path.join(root, "agents", slug), removed);
+  // Resolve and validate every target before deleting anything.
+  const skipped = [];
+  const targets = [];
+  for (const { root, project } of toolRoots) {
+    for (const kind of ["skills", "agents"]) {
+      if (project && !isSafeProjectKindDir(root, kind)) {
+        skipped.push(path.join(root, kind));
+        continue;
+      }
+      targets.push(path.join(root, kind));
+    }
   }
+  for (const baseDir of targets) resolveInsideRoot(baseDir, slug);
+  for (const baseDir of targets) removeSlugDirIfExists(baseDir, slug, removed);
 
   const pinRemoved = removePin(slug);
 
@@ -2022,6 +2119,10 @@ async function uninstallSkill(args = {}) {
     for (const item of removed) lines.push(`- ${item}`);
   }
   lines.push(`Pin removed: ${pinRemoved ? "yes" : "no"}`);
+  if (skipped.length) {
+    lines.push("Skipped symlinked project paths (not followed):");
+    for (const item of skipped) lines.push(`- ${item}`);
+  }
 
   return mkContent(lines.join("\n"));
 }
